@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "name": "Forest Adventure",
+  "scene": {
+    "id": "scene-1",
+    "name": "Main Scene",
+    "width": 1280,
+    "height": 720,
+    "objects": [
+      {
+        "name": "Player 1",
+        "type": "player",
+        "x": 418,
+        "y": 298,
+        "width": 48,
+        "height": 64,
+        "color": "#3b82f6",
+        "id": "2bab3dce-ab34-4bd5-beec-d4bd6454095e"
+      },
+      {
+        "name": "Platform 2",
+        "type": "platform",
+        "x": 430,
+        "y": 502,
+        "width": 220,
+        "height": 32,
+        "color": "#22c55e",
+        "id": "a635f32e-802f-45b9-8bce-cf972247a1bd"
+      },
+      {
+        "name": "Coin 3",
+        "type": "coin",
+        "x": 688,
+        "y": 308,
+        "width": 32,
+        "height": 32,
+        "color": "#facc15",
+        "id": "449c4c4a-f879-423e-9df1-1a5066544eb7"
+      }
+    ]
+  }
+}
