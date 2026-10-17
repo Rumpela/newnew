@@ -14,6 +14,12 @@ type SceneObject = {
   color: string;
 };
 
+type DragState = {
+  id: string;
+  offsetX: number;
+  offsetY: number;
+};
+
 const objectTemplates: Record<
   ObjectType,
   Omit<SceneObject, "id">
@@ -59,8 +65,90 @@ const objectTemplates: Record<
 function App() {
   const [objects, setObjects] = useState<SceneObject[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dragState, setDragState] =
+  useState<DragState | null>(null);
 
   const selectedObject = objects.find((object) => object.id === selectedId);
+
+  function getScenePoint(
+  clientX: number,
+  clientY: number,
+  ) {
+  const canvas = document.querySelector(
+    ".scene-canvas",
+  ) as HTMLElement | null;
+
+  if (!canvas) {
+    return { x: 0, y: 0 };
+  }
+
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    // Canvas ვიზუალურად 2-ჯერ არის დაპატარავებული
+    x: (clientX - rect.left) * 2,
+    y: (clientY - rect.top) * 2,
+  };
+  }
+
+  function startDragging(
+    event: React.PointerEvent<HTMLButtonElement>,
+    object: SceneObject,
+  ) {
+  event.stopPropagation();
+
+  const point = getScenePoint(
+    event.clientX,
+    event.clientY,
+  );
+
+  setSelectedId(object.id);
+
+  setDragState({
+    id: object.id,
+    offsetX: point.x - object.x,
+    offsetY: point.y - object.y,
+  });
+
+  event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveDraggedObject(
+    event: React.PointerEvent<HTMLDivElement>,
+  ) {
+  if (!dragState) return;
+
+  const point = getScenePoint(
+    event.clientX,
+    event.clientY,
+  );
+
+  const nextX = Math.max(
+    0,
+    Math.min(1280 - 1, point.x - dragState.offsetX),
+  );
+
+  const nextY = Math.max(
+    0,
+    Math.min(720 - 1, point.y - dragState.offsetY),
+  );
+
+    setObjects((currentObjects) =>
+      currentObjects.map((object) =>
+        object.id === dragState.id
+          ? {
+              ...object,
+              x: Math.round(nextX),
+              y: Math.round(nextY),
+            }
+          : object,
+      ),
+    );
+  }
+
+  function stopDragging() {
+    setDragState(null);
+  }
 
   function addObject(type: ObjectType) {
     const template = objectTemplates[type];
@@ -196,7 +284,12 @@ function App() {
           </div>
 
           <div className="canvas-wrapper">
-            <div className="scene-canvas">
+            <div
+              className="scene-canvas"
+              onPointerMove={moveDraggedObject}
+              onPointerUp={stopDragging}
+              onPointerLeave={stopDragging}
+            >
               <div className="canvas-label">1280 × 720</div>
 
               {objects.map((object) => (
@@ -205,6 +298,9 @@ function App() {
                   className={`scene-object ${
                     object.id === selectedId ? "selected-object" : ""
                   }`}
+                  onPointerDown={(event) =>
+                    startDragging(event, object)
+                  }
                   style={{
                     left: `${object.x / 2}px`,
                     top: `${object.y / 2}px`,
