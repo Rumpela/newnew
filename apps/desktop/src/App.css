@@ -48,6 +48,9 @@ button {
   border-bottom: 1px solid #26344d;
   background: #111c31;
 }
+.topbar-actions button {
+  white-space: nowrap;
+}
 
 .brand,
 .brand > div:last-child {

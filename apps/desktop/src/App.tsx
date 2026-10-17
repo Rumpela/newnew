@@ -1,4 +1,9 @@
 import { useState } from "react";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import {
+  readTextFile,
+  writeTextFile,
+} from "@tauri-apps/plugin-fs";
 import "./App.css";
 
 type ObjectType = "player" | "platform" | "coin" | "enemy";
@@ -12,6 +17,17 @@ type SceneObject = {
   width: number;
   height: number;
   color: string;
+};
+type ProjectFile = {
+  version: 1;
+  name: string;
+  scene: {
+    id: string;
+    name: string;
+    width: number;
+    height: number;
+    objects: SceneObject[];
+  };
 };
 
 type DragState = {
@@ -68,7 +84,78 @@ function App() {
   const [dragState, setDragState] =
   useState<DragState | null>(null);
 
-  const selectedObject = objects.find((object) => object.id === selectedId);
+    const selectedObject = objects.find((object) => object.id === selectedId);
+    async function saveProject() {
+    try {
+      const filePath = await save({
+        title: "Save AI 2D Project",
+        defaultPath: "forest-adventure.ai2d.json",
+        filters: [
+          {
+            name: "AI 2D Project",
+            extensions: ["json"],
+          },
+        ],
+      });
+
+      if (!filePath) {
+        return;
+      }
+
+      const projectFile: ProjectFile = {
+        version: 1,
+        name: "Forest Adventure",
+        scene: {
+          id: "scene-1",
+          name: "Main Scene",
+          width: 1280,
+          height: 720,
+          objects,
+        },
+      };
+
+      await writeTextFile(
+        filePath,
+        JSON.stringify(projectFile, null, 2),
+      );
+
+      console.log("Project saved:", filePath);
+    } catch (error) {
+      console.error("Failed to save project:", error);
+    }
+  }
+
+  async function openProject() {
+    try {
+      const selectedPath = await open({
+        title: "Open AI 2D Project",
+        multiple: false,
+        directory: false,
+        filters: [
+          {
+            name: "AI 2D Project",
+            extensions: ["json"],
+          },
+        ],
+      });
+
+      if (!selectedPath || Array.isArray(selectedPath)) {
+        return;
+      }
+
+      const fileContent = await readTextFile(selectedPath);
+      const projectFile = JSON.parse(
+        fileContent,
+      ) as ProjectFile;
+
+      setObjects(projectFile.scene.objects);
+      setSelectedId(null);
+
+      console.log("Project opened:", selectedPath);
+    } catch (error) {
+      console.error("Failed to open project:", error);
+    }
+  }
 
   function getScenePoint(
   clientX: number,
@@ -206,8 +293,23 @@ function App() {
         </nav>
 
         <div className="topbar-actions">
-          <button className="secondary-button">Save</button>
-          <button className="primary-button">Preview</button>
+          <button
+            className="secondary-button"
+            onClick={openProject}
+          >
+            Open
+          </button>
+
+          <button
+            className="secondary-button"
+            onClick={saveProject}
+          >
+            Save
+          </button>
+
+          <button className="primary-button">
+            Preview
+          </button>
         </div>
       </header>
 
@@ -301,6 +403,7 @@ function App() {
                   onPointerDown={(event) =>
                     startDragging(event, object)
                   }
+
                   style={{
                     left: `${object.x / 2}px`,
                     top: `${object.y / 2}px`,
